@@ -131,7 +131,7 @@
         <!-- QR -->
         <div class="qr-container">
             <div class="qr-wrapper">
-                {!! QrCode::size(180)->generate($parkir->qr_code) !!}
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ $parkir->qr_code }}">
             </div>
         </div>
 
