@@ -33,11 +33,6 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="font-size: 13px;">Kode RFID (Opsional)</label>
-                            <input type="text" name="rfid_code" class="form-control" value="{{ $member->rfid_code }}">
-                            <small class="text-muted" style="font-size: 11px;">Tap kartu pada reader untuk mengisi/mengganti.</small>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label fw-semibold" style="font-size: 13px;">Masa Aktif Sampai</label>
                             <input type="date" name="masa_aktif_sampai" class="form-control" value="{{ $member->masa_aktif_sampai }}" required>
                         </div>

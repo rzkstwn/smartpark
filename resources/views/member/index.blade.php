@@ -22,17 +22,30 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead style="background-color: #f8fafc;">
                             <tr>
-                                <th class="text-secondary fw-semibold ps-4 py-3" style="font-size: 13px;">NAMA</th>
+                                <th class="text-secondary fw-semibold text-center ps-4 py-3" style="font-size: 13px; width: 100px;">AKSI</th>
+                                <th class="text-secondary fw-semibold py-3" style="font-size: 13px;">NAMA</th>
                                 <th class="text-secondary fw-semibold py-3" style="font-size: 13px;">PLAT NOMOR</th>
                                 <th class="text-secondary fw-semibold py-3" style="font-size: 13px;">KENDARAAN</th>
-                                <th class="text-secondary fw-semibold py-3" style="font-size: 13px;">MASA AKTIF</th>
-                                <th class="text-secondary fw-semibold text-center pe-4 py-3" style="font-size: 13px;">AKSI</th>
+                                <th class="text-secondary fw-semibold pe-4 py-3" style="font-size: 13px;">MASA AKTIF</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($members as $m)
                                 <tr>
-                                    <td class="ps-4 py-3">
+                                    <td class="text-center ps-4 py-3">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <a href="{{ route('member.edit', $m->id) }}" class="btn btn-sm btn-light border text-primary" data-bs-toggle="tooltip" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('member.destroy', $m->id) }}" method="POST" onsubmit="return confirm('Hapus member ini?')">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-light border text-danger" data-bs-toggle="tooltip" title="Hapus">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                    <td class="py-3">
                                         <div class="fw-bold text-gray-800 dark:text-gray-200">{{ $m->nama }}</div>
                                         <div class="text-muted" style="font-size: 12px;">{{ $m->nomor_hp }}</div>
                                     </td>
@@ -44,25 +57,12 @@
                                             {{ ucfirst($m->jenis_kendaraan) }}
                                         </span>
                                     </td>
-                                    <td class="py-3">
+                                    <td class="pe-4 py-3">
                                         @php
                                             $isActive = \Carbon\Carbon::parse($m->masa_aktif_sampai)->isFuture();
                                         @endphp
                                         <div class="{{ $isActive ? 'text-success' : 'text-danger' }} fw-semibold" style="font-size: 13px;">
                                             {{ \Carbon\Carbon::parse($m->masa_aktif_sampai)->format('d M Y') }}
-                                        </div>
-                                    </td>
-                                    <td class="text-center pe-4 py-3">
-                                        <div class="d-flex justify-content-center gap-2">
-                                            <a href="{{ route('member.edit', $m->id) }}" class="btn btn-sm btn-light border text-primary" data-bs-toggle="tooltip" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <form action="{{ route('member.destroy', $m->id) }}" method="POST" onsubmit="return confirm('Hapus member ini?')">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-light border text-danger" data-bs-toggle="tooltip" title="Hapus">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
                                         </div>
                                     </td>
                                 </tr>

@@ -220,7 +220,7 @@
         <i class="fas fa-sign-in-alt" style="color:white; font-size:20px;"></i>
     </div>
     <div class="brand-title">Kendaraan Masuk</div>
-    <div class="brand-sub">Isi data kendaraan atau tap kartu member</div>
+    <div class="brand-sub">Isi data kendaraan atau scan QR member</div>
 
     <div class="clock-row">
         <span class="cdate" id="dateNow">--/--/----</span>
@@ -235,7 +235,7 @@
 
     <form action="{{ route('parkir.masuk') }}" method="POST" id="formMasuk">
         @csrf
-        <input type="hidden" name="rfid_code" id="rfidCodeInput">
+        <input type="hidden" name="qr_code" id="qrCodeInput">
 
         <div class="sec-label"><i class="fas fa-hashtag me-1"></i>Plat Nomor Kendaraan</div>
         <div class="input-wrap">
@@ -267,8 +267,8 @@
             <i class="fas fa-ticket-alt me-2"></i> Generate Tiket Parkir
         </button>
 
-        <button type="button" class="btn-member" onclick="openRfidModal()">
-            <i class="fas fa-id-card me-2"></i> Tap Kartu Member / RFID
+        <button type="button" class="btn-member" onclick="openQrModal()">
+            <i class="fas fa-qrcode me-2"></i> Scan QR Member
         </button>
     </form>
 
@@ -300,15 +300,15 @@
     </div>
 </div>
 
-<!-- RFID Modal -->
-<div class="modal-overlay" id="rfidModal">
+<!-- QR Modal -->
+<div class="modal-overlay" id="qrModal">
     <div class="modal-box">
-        <i class="fas fa-wifi mb-3" style="font-size: 30px; color: #3b82f6;"></i>
-        <h5>Menunggu Kartu...</h5>
-        <p>Silakan tap kartu RFID atau Scan QR Member Anda ke reader.</p>
-        <!-- Invisible input to capture RFID keyboard strokes -->
-        <input type="text" id="rfidListener" style="opacity:0; position:absolute; z-index:-1;">
-        <button class="btn btn-outline-light w-100 mt-3" onclick="closeRfidModal()">Batal</button>
+        <i class="fas fa-qrcode mb-3" style="font-size: 30px; color: #3b82f6;"></i>
+        <h5>Menunggu QR...</h5>
+        <p>Silakan scan QR Member Anda ke reader.</p>
+        <!-- Invisible input to capture QR scanner keyboard strokes -->
+        <input type="text" id="qrListener" style="opacity:0; position:absolute; z-index:-1;">
+        <button class="btn btn-outline-light w-100 mt-3" onclick="closeQrModal()">Batal</button>
     </div>
 </div>
 
@@ -388,39 +388,39 @@
         closeCameraModal();
     }
 
-    /* --- RFID LOGIC --- */
-    let rfidTimeout;
-    const rfidListener = document.getElementById('rfidListener');
+    /* --- QR LOGIC --- */
+    let qrTimeout;
+    const qrListener = document.getElementById('qrListener');
 
-    function openRfidModal() {
-        document.getElementById('rfidModal').style.display = 'flex';
-        rfidListener.value = '';
-        rfidListener.focus();
+    function openQrModal() {
+        document.getElementById('qrModal').style.display = 'flex';
+        qrListener.value = '';
+        qrListener.focus();
     }
 
-    function closeRfidModal() {
-        document.getElementById('rfidModal').style.display = 'none';
+    function closeQrModal() {
+        document.getElementById('qrModal').style.display = 'none';
     }
 
     // Keep focus on hidden input when modal is open
-    document.getElementById('rfidModal').addEventListener('click', function() {
-        rfidListener.focus();
+    document.getElementById('qrModal').addEventListener('click', function() {
+        qrListener.focus();
     });
 
-    rfidListener.addEventListener('input', function() {
-        clearTimeout(rfidTimeout);
-        rfidTimeout = setTimeout(() => {
-            const code = rfidListener.value.trim();
+    qrListener.addEventListener('input', function() {
+        clearTimeout(qrTimeout);
+        qrTimeout = setTimeout(() => {
+            const code = qrListener.value.trim();
             if(code.length > 3) {
                 processMemberCheck(code);
             }
-            rfidListener.value = '';
+            qrListener.value = '';
         }, 300); // Wait 300ms after last stroke
     });
 
     function processMemberCheck(code) {
-        document.getElementById('rfidCodeInput').value = code;
-        closeRfidModal();
+        document.getElementById('qrCodeInput').value = code;
+        closeQrModal();
 
         // Check via API
         fetch('/api/member/check', {
