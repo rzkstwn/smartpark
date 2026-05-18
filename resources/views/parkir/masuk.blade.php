@@ -304,16 +304,25 @@
 <div class="modal-overlay" id="qrModal">
     <div class="modal-box">
         <i class="fas fa-qrcode mb-3" style="font-size: 30px; color: #3b82f6;"></i>
-        <h5>Menunggu QR...</h5>
-        <p>Silakan scan QR Member Anda ke reader.</p>
+        <h5>Scan QR Member</h5>
+        <p>Silakan scan QR Member Anda ke reader atau kamera.</p>
+        
+        <!-- Video placeholder for QR Scanner -->
+        <div id="qr-reader" style="width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none;"></div>
+
         <!-- Invisible input to capture QR scanner keyboard strokes -->
         <input type="text" id="qrListener" style="opacity:0; position:absolute; z-index:-1;">
-        <button class="btn btn-outline-light w-100 mt-3" onclick="closeQrModal()">Batal</button>
+        
+        <button class="btn btn-primary w-100 mb-2" onclick="startQrCamera()" id="btnStartQrCam">
+            <i class="fas fa-camera"></i> Gunakan Kamera
+        </button>
+        <button class="btn btn-outline-light w-100 mt-2" onclick="closeQrModal()">Batal</button>
     </div>
 </div>
 
-<!-- Tesseract.js -->
+<!-- Tesseract.js & Html5Qrcode -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <script>
     // Auto-uppercase plat
@@ -391,6 +400,7 @@
     /* --- QR LOGIC --- */
     let qrTimeout;
     const qrListener = document.getElementById('qrListener');
+    let html5QrCode = null;
 
     function openQrModal() {
         document.getElementById('qrModal').style.display = 'flex';
@@ -400,11 +410,53 @@
 
     function closeQrModal() {
         document.getElementById('qrModal').style.display = 'none';
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+                html5QrCode = null;
+            }).catch(err => console.log(err));
+        }
+        document.getElementById('qr-reader').style.display = 'none';
+        document.getElementById('btnStartQrCam').style.display = 'block';
+    }
+
+    function startQrCamera() {
+        document.getElementById('qr-reader').style.display = 'block';
+        document.getElementById('btnStartQrCam').style.display = 'none';
+        
+        html5QrCode = new Html5Qrcode("qr-reader");
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+            },
+            (decodedText, decodedResult) => {
+                if (html5QrCode) {
+                    html5QrCode.stop().then((ignore) => {
+                        html5QrCode.clear();
+                        html5QrCode = null;
+                    }).catch(err => console.log(err));
+                }
+                document.getElementById('qr-reader').style.display = 'none';
+                document.getElementById('btnStartQrCam').style.display = 'block';
+                processMemberCheck(decodedText);
+            },
+            (errorMessage) => {
+                // ignore errors during scan
+            })
+        .catch((err) => {
+            alert("Gagal mengakses kamera QR: " + err);
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('btnStartQrCam').style.display = 'block';
+        });
     }
 
     // Keep focus on hidden input when modal is open
-    document.getElementById('qrModal').addEventListener('click', function() {
-        qrListener.focus();
+    document.getElementById('qrModal').addEventListener('click', function(e) {
+        if(e.target.id === 'qrModal') {
+            qrListener.focus();
+        }
     });
 
     qrListener.addEventListener('input', function() {

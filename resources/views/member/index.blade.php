@@ -34,6 +34,9 @@
                                 <tr>
                                     <td class="text-center ps-4 py-3">
                                         <div class="d-flex justify-content-center gap-2">
+                                            <button type="button" class="btn btn-sm btn-light border text-success" data-bs-toggle="tooltip" title="Lihat QR" onclick="showQrModal('{{ $m->qr_code }}', '{{ $m->nama }}')">
+                                                <i class="fas fa-qrcode"></i>
+                                            </button>
                                             <a href="{{ route('member.edit', $m->id) }}" class="btn btn-sm btn-light border text-primary" data-bs-toggle="tooltip" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
@@ -85,4 +88,49 @@
             @endif
         </div>
     </div>
+
+    <!-- Modal QR Code -->
+    <div class="modal fade" id="memberQrModal" tabindex="-1" aria-labelledby="memberQrModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content" style="border-radius: 12px; border: none;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="memberQrModalLabel">QR Code Member</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center pt-2 pb-4">
+                    <p class="text-muted mb-3" id="qrMemberName" style="font-size: 14px;"></p>
+                    <div id="qrcode" class="d-flex justify-content-center mb-3"></div>
+                    <p class="text-muted mb-0" style="font-size: 11px;">Tunjukkan QR Code ini di gerbang masuk.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        let qrcode = null;
+
+        function showQrModal(code, name) {
+            document.getElementById('qrMemberName').innerText = name;
+            
+            // Hapus QR Code sebelumnya jika ada
+            document.getElementById('qrcode').innerHTML = "";
+            
+            // Generate QR Code baru
+            qrcode = new QRCode(document.getElementById("qrcode"), {
+                text: code,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            
+            // Tampilkan Modal
+            var myModal = new bootstrap.Modal(document.getElementById('memberQrModal'));
+            myModal.show();
+        }
+    </script>
+    @endpush
 </x-app-layout>
