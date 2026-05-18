@@ -31,6 +31,9 @@
                         </thead>
                         <tbody>
                             @forelse($members as $m)
+                                @php
+                                    $isActive = \Carbon\Carbon::parse($m->masa_aktif_sampai)->isFuture();
+                                @endphp
                                 <tr>
                                     <td class="text-center ps-4 py-3">
                                         <div class="d-flex justify-content-center gap-2">
@@ -61,9 +64,6 @@
                                         </span>
                                     </td>
                                     <td class="pe-4 py-3">
-                                        @php
-                                            $isActive = \Carbon\Carbon::parse($m->masa_aktif_sampai)->isFuture();
-                                        @endphp
                                         <div class="{{ $isActive ? 'text-success' : 'text-danger' }} fw-semibold" style="font-size: 13px;">
                                             {{ \Carbon\Carbon::parse($m->masa_aktif_sampai)->format('d M Y') }}
                                         </div>
