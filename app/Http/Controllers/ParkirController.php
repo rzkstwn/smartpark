@@ -104,11 +104,13 @@ class ParkirController extends Controller
             'plat_nomor'      => $plat,
         ]);
 
+        $parkirQr = $member && $member->qr_code ? $member->qr_code : uniqid('QR-');
+
         $parkir = Parkir::create([
             'kendaraan_id' => $kendaraan->id,
             'member_id'    => $member_id,
             'waktu_masuk'  => now(),
-            'qr_code'      => uniqid(),
+            'qr_code'      => $parkirQr,
             'status'       => 'masuk',
         ]);
 
