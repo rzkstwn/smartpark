@@ -609,8 +609,42 @@
                     vmModal.show();
                 }
             } else {
+                const vmHeader = document.getElementById('vmHeader');
+                const vmStatus = document.getElementById('vmStatus');
+                const vmActiveAlert = document.getElementById('vmActiveAlert');
+                const vmExpiredAlert = document.getElementById('vmExpiredAlert');
+                const vmFooter = document.getElementById('vmFooter');
+
+                var vmModal = new bootstrap.Modal(document.getElementById('verifikasiMemberModal'));
+
+                // Reset content
+                document.getElementById('vmNama').textContent = '-';
+                document.getElementById('vmPlat').textContent = '-';
+                document.getElementById('vmJenis').textContent = '-';
+                document.getElementById('vmExpired').textContent = '-';
+
+                vmHeader.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                vmHeader.innerHTML = '<h5 class="mb-0 fw-bold"><i class="fas fa-times-circle me-2"></i>QR CODE TIDAK VALID</h5>';
+                
+                vmStatus.className = 'badge bg-secondary';
+                vmStatus.textContent = 'TIDAK DITEMUKAN';
+                
+                vmActiveAlert.classList.add('d-none');
+                
+                vmExpiredAlert.className = 'mt-4 p-3 rounded text-center';
+                vmExpiredAlert.innerHTML = `
+                    <i class="fas fa-question-circle me-2 mb-2" style="font-size: 24px;"></i><br>
+                    <strong>Data member tidak ditemukan.</strong><br>
+                    <small>Silakan gunakan parkir reguler tanpa kartu member.</small>
+                `;
+                
+                vmFooter.innerHTML = `
+                    <button type="button" class="btn btn-outline-light w-100 mb-2" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #3b82f6, #2563eb); border: none;" onclick="document.getElementById('formMasuk').submit();">Generate Tiket Parkir (Reguler)</button>
+                `;
+                
                 playTTS("QR code tidak valid atau data tidak ditemukan.");
-                alert("Data member tidak ditemukan untuk kartu ini.");
+                vmModal.show();
             }
         }).catch(err => {
             console.error(err);
