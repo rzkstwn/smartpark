@@ -555,15 +555,22 @@
             if(data.success) {
                 const member = data.member;
                 
-                // Auto fill form
-                document.getElementById('platInput').value = member.plat_nomor;
-                document.getElementById(member.jenis_kendaraan).checked = true;
+                // Auto fill form (Aman dari null & case sensitivity)
+                if (member.plat_nomor) {
+                    document.getElementById('platInput').value = member.plat_nomor;
+                }
+                
+                let jk = (member.jenis_kendaraan || 'motor').toLowerCase();
+                let jkElement = document.getElementById(jk);
+                if (jkElement) {
+                    jkElement.checked = true;
+                }
 
                 // Setup Verifikasi Modal
-                document.getElementById('vmNama').textContent = member.nama;
-                document.getElementById('vmPlat').textContent = member.plat_nomor;
-                document.getElementById('vmJenis').innerHTML = member.jenis_kendaraan === 'motor' ? '<i class="fas fa-motorcycle me-1"></i> Motor' : '<i class="fas fa-car me-1"></i> Mobil';
-                document.getElementById('vmExpired').textContent = member.masa_aktif_sampai;
+                document.getElementById('vmNama').textContent = member.nama || '-';
+                document.getElementById('vmPlat').textContent = member.plat_nomor || '-';
+                document.getElementById('vmJenis').innerHTML = jk === 'motor' ? '<i class="fas fa-motorcycle me-1"></i> Motor' : '<i class="fas fa-car me-1"></i> Mobil';
+                document.getElementById('vmExpired').textContent = member.masa_aktif_sampai || '-';
                 
                 const vmHeader = document.getElementById('vmHeader');
                 const vmStatus = document.getElementById('vmStatus');
