@@ -457,6 +457,13 @@
         document.getElementById('qrModal').style.display = 'flex';
         qrListener.value = '';
         qrListener.focus();
+        
+        // Langsung mulai kamera tanpa perlu klik tombol
+        setTimeout(() => {
+            if (!html5QrCode) {
+                startQrCamera();
+            }
+        }, 200);
     }
 
     function closeQrModal() {
