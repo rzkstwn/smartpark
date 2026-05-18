@@ -490,14 +490,8 @@
                 qrbox: { width: 250, height: 250 }
             },
             (decodedText, decodedResult) => {
-                if (html5QrCode) {
-                    html5QrCode.stop().then((ignore) => {
-                        html5QrCode.clear();
-                        html5QrCode = null;
-                    }).catch(err => console.log(err));
-                }
-                document.getElementById('qr-reader').style.display = 'none';
-                document.getElementById('btnStartQrCam').style.display = 'block';
+                // Jangan panggil html5QrCode.stop() di sini karena processMemberCheck memanggil closeQrModal()
+                // yang sudah menangani stop kamera secara aman.
                 processMemberCheck(decodedText);
             },
             (errorMessage) => {
