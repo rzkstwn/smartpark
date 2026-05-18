@@ -324,9 +324,16 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="fw-bold text-plat" style="letter-spacing:0.5px;">
-                                    {{ optional($p->kendaraan)->plat_nomor ?? '-' }}
-                                </span>
+                                <div class="d-flex flex-column align-items-center">
+                                    <span class="fw-bold text-plat" style="letter-spacing:0.5px;">
+                                        {{ optional($p->kendaraan)->plat_nomor ?? '-' }}
+                                    </span>
+                                    @if($p->member_id)
+                                        <span class="badge mt-1" style="background: linear-gradient(135deg, #3b82f6, #2563eb); font-size: 10px; padding: 3px 8px; border-radius: 6px; box-shadow: 0 2px 5px rgba(59, 130, 246, 0.3);">
+                                            <i class="fas fa-crown text-warning me-1"></i> MEMBER
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                             <td>
                                 @php $jenis = optional($p->kendaraan)->jenis_kendaraan ?? '-'; @endphp

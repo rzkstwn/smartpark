@@ -88,6 +88,9 @@ class ParkirController extends Controller
         if ($request->filled('rfid_code')) {
             $memberQuery->orWhere('rfid_code', $request->rfid_code);
         }
+        if ($request->filled('qr_code')) {
+            $memberQuery->orWhere('qr_code', $request->qr_code);
+        }
         $member = $memberQuery->first();
 
         if ($member) {
