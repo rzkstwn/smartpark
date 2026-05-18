@@ -12,8 +12,16 @@ class Parkir extends Model
         'waktu_keluar',
         'qr_code',
         'status',
-        'biaya'
+        'biaya',
+        'member_id'
     ];
+    // app/Models/Parkir.php
+
+public function member()
+{
+    return $this->belongsTo(Member::class);
+}
+
     // app/Models/Parkir.php
 
 public function kendaraan()

@@ -58,13 +58,23 @@
     <div class="info">ID Tiket: <b>#{{ $parkir->id }}</b></div>
     <div class="info">Durasi: <b>{{ $durasi }} Jam</b></div>
 
-    <h1>Rp {{ number_format($biaya) }}</h1>
+    @if($parkir->member && \Carbon\Carbon::parse($parkir->member->masa_aktif_sampai)->isFuture())
+        <div class="info" style="color: #10b981; font-weight: bold; margin-top:10px;">✅ Status: Member Aktif</div>
+        <div class="info" style="color: #f59e0b; font-size:12px;">Portal akan terbuka otomatis</div>
+        <h1 style="color: #10b981;">GRATIS</h1>
+    @else
+        <h1>Rp {{ number_format($biaya) }}</h1>
+    @endif
 
     <!-- 🔥 FORM KE CONTROLLER -->
     <form action="{{ route('bayar', $parkir->id) }}" method="POST">
     @csrf
     <button>
-        💰 Bayar Sekarang
+        @if($parkir->member && \Carbon\Carbon::parse($parkir->member->masa_aktif_sampai)->isFuture())
+            🚀 Lanjutkan (Buka Portal)
+        @else
+            💰 Bayar Sekarang
+        @endif
     </button>
 </form>
 

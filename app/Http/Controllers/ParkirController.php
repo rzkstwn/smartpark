@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Kendaraan;
+use App\Models\Member;
+
 
 class ParkirController extends Controller
 {
@@ -55,8 +57,11 @@ class ParkirController extends Controller
      * Motor: 3 Jam pertama Rp3.000, selanjutnya Rp1.000/jam
      * Mobil: 3 Jam pertama Rp6.000, selanjutnya Rp2.000/jam
      */
-    private function hitungBiaya($jenis, $durasi)
+    private function hitungBiaya($jenis, $durasi, $member = null)
     {
+        if ($member && \Carbon\Carbon::parse($member->masa_aktif_sampai)->isFuture()) {
+            return 0; // Member is active
+        }
         $jenis = strtolower($jenis);
         $tarif = Tarif::query()->where('jenis_kendaraan', $jenis)->first();
 
@@ -78,6 +83,19 @@ class ParkirController extends Controller
             $plat = 'AUTO-' . rand(1000, 9999);
         }
 
+        $member_id = null;
+        $memberQuery = Member::where('plat_nomor', $plat);
+        if ($request->filled('rfid_code')) {
+            $memberQuery->orWhere('rfid_code', $request->rfid_code);
+        }
+        $member = $memberQuery->first();
+
+        if ($member) {
+            $member_id = $member->id;
+            $plat = $member->plat_nomor;
+            $request->merge(['jenis_kendaraan' => $member->jenis_kendaraan]);
+        }
+
         $kendaraan = Kendaraan::create([
             'jenis_kendaraan' => $request->jenis_kendaraan,
             'plat_nomor'      => $plat,
@@ -85,6 +103,7 @@ class ParkirController extends Controller
 
         $parkir = Parkir::create([
             'kendaraan_id' => $kendaraan->id,
+            'member_id'    => $member_id,
             'waktu_masuk'  => now(),
             'qr_code'      => uniqid(),
             'status'       => 'masuk',
@@ -92,6 +111,7 @@ class ParkirController extends Controller
 
         return redirect('/tiket/' . $parkir->id);
     }
+
 
     public function tiket($id)
     {
@@ -128,7 +148,7 @@ class ParkirController extends Controller
             return redirect()->route('parkir.scan')->with('error', 'Jenis kendaraan tidak ditemukan.');
         }
 
-        $biaya = $this->hitungBiaya($jenis, $durasi);
+        $biaya = $this->hitungBiaya($jenis, $durasi, $parkir->member);
         return view('parkir.bayar', compact('parkir', 'durasi', 'biaya'));
     }
 
@@ -165,7 +185,7 @@ class ParkirController extends Controller
             return redirect()->route('parkir.scan')->with('error', 'Jenis kendaraan tidak ditemukan.');
         }
 
-        $biaya = $this->hitungBiaya($jenis, $durasi);
+        $biaya = $this->hitungBiaya($jenis, $durasi, $parkir->member);
         return view('parkir.bayar', compact('parkir', 'durasi', 'biaya'));
     }
 
@@ -186,7 +206,7 @@ class ParkirController extends Controller
         ));
 
         $jenis = $parkir->kendaraan->jenis_kendaraan;
-        $biaya = $this->hitungBiaya($jenis, $durasi);
+        $biaya = $this->hitungBiaya($jenis, $durasi, $parkir->member);
 
         // 🔥 SIMPAN SETELAH BAYAR
         $parkir->update([
@@ -227,7 +247,7 @@ class ParkirController extends Controller
             ));
             
             // Gunakan biaya yang tersimpan, atau hitung ulang jika belum ada
-            $biaya = $parkir->biaya ?? $this->hitungBiaya($parkir->kendaraan->jenis_kendaraan, $durasi);
+            $biaya = $parkir->biaya ?? $this->hitungBiaya($parkir->kendaraan->jenis_kendaraan, $durasi, $parkir->member);
         }
 
         $pdf = Pdf::loadView('struk_pdf', compact('parkir','tarif','durasi','biaya'));
@@ -241,5 +261,23 @@ class ParkirController extends Controller
     {
         $parkir = Parkir::find($id);
         return view('parkir.sukses', compact('parkir'));
+    }
+
+    public function checkMember(Request $request)
+    {
+        $identifier = $request->input('identifier');
+        $member = Member::where('rfid_code', $identifier)
+                    ->orWhere('qr_code', $identifier)
+                    ->orWhere('plat_nomor', $identifier)
+                    ->first();
+
+        if ($member) {
+            return response()->json([
+                'success' => true,
+                'member' => collect($member)->only(['id', 'nama', 'plat_nomor', 'jenis_kendaraan', 'masa_aktif_sampai'])->toArray()
+            ]);
+        }
+
+        return response()->json(['success' => false]);
     }
 }

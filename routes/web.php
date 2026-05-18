@@ -121,6 +121,10 @@ Route::get('/api/dashboard', function () {
     ]);
 })->name('api.dashboard');
 
+// API Check Member
+Route::post('/api/member/check', [\App\Http\Controllers\ParkirController::class, 'checkMember'])->name('api.member.check');
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -138,6 +142,9 @@ Route::middleware(['auth'])->group(function () {
     // Data Kendaraan Masuk
     Route::get('/kendaraan', [ParkirController::class, 'index'])->name('parkir.index');
     Route::delete('/kendaraan/{id}', [ParkirController::class, 'destroy'])->name('parkir.destroy');
+
+    Route::resource('member', \App\Http\Controllers\MemberController::class);
+
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
