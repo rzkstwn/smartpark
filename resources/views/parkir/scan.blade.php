@@ -231,6 +231,51 @@
 
 </div>
 
+<!-- Modal Info Keluar -->
+<div class="modal fade" id="infoKeluarModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; background: #0f172a; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <div id="ikHeader" style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 15px; text-align: center; color: white;">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-car-side me-2"></i>KENDARAAN KELUAR</h5>
+            </div>
+            <div class="modal-body p-4 text-white">
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <span class="text-secondary" style="font-size: 13px;">Plat Nomor</span>
+                        <span class="fw-bold" id="ikPlat">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <span class="text-secondary" style="font-size: 13px;">Waktu Masuk</span>
+                        <span class="fw-bold" id="ikMasuk">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <span class="text-secondary" style="font-size: 13px;">Waktu Keluar</span>
+                        <span class="fw-bold" id="ikKeluar">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <span class="text-secondary" style="font-size: 13px;">Durasi Parkir</span>
+                        <span class="fw-bold" id="ikDurasi">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="text-secondary" style="font-size: 13px;">Total Biaya</span>
+                        <span class="fw-bold" id="ikBiaya" style="font-size: 18px; color: #10b981;">-</span>
+                    </div>
+                </div>
+
+                <div id="ikMemberAlert" class="mt-4 p-3 rounded text-center d-none" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7;">
+                    <i class="fas fa-crown me-2 mb-2" style="font-size: 24px; color: #f59e0b;"></i><br>
+                    <strong>MEMBER AKTIF</strong><br>
+                    <small>Biaya parkir digratiskan.</small>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 d-flex justify-content-center p-3 pb-4">
+                <button type="button" class="btn btn-outline-light w-100 mb-2" onclick="location.reload()">Batal</button>
+                <button type="button" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #10b981, #059669); border: none;" onclick="document.getElementById('formKeluar').submit();">Selesaikan / Keluar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Hidden form QR --}}
 <form id="formKeluar" action="/parkir/keluar" method="POST">
     @csrf
@@ -270,6 +315,16 @@ function beep() {
     } catch(e) {}
 }
 
+function playTTS(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'id-ID';
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
 function submitQr(code) {
     code = (code || '').trim();
     if (!code || sudahScan) return;
@@ -277,7 +332,62 @@ function submitQr(code) {
     beep();
     setStatus('QR terdeteksi — memproses...', 'success');
     document.getElementById('qr_code').value = code;
-    document.getElementById('formKeluar').submit();
+
+    // Pause camera
+    if(typeof html5QrCode !== 'undefined' && html5QrCode.isScanning) {
+        html5QrCode.pause();
+    }
+
+    fetch('/api/parkir/check-keluar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ qr_code: code })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            const d = data.data;
+            document.getElementById('ikPlat').textContent = d.plat_nomor;
+            document.getElementById('ikMasuk').textContent = d.waktu_masuk;
+            document.getElementById('ikKeluar').textContent = d.waktu_keluar;
+            document.getElementById('ikDurasi').textContent = d.durasi + ' Jam';
+            
+            const ikBiaya = document.getElementById('ikBiaya');
+            const ikMemberAlert = document.getElementById('ikMemberAlert');
+            
+            if (d.is_member && d.is_member_active) {
+                ikBiaya.textContent = "GRATIS MEMBER";
+                ikBiaya.style.color = "#10b981";
+                ikMemberAlert.classList.remove('d-none');
+                playTTS("Member valid. Biaya parkir gratis. Silakan keluar.");
+            } else {
+                ikBiaya.textContent = "Rp " + d.biaya.toLocaleString('id-ID');
+                ikBiaya.style.color = "#ef4444";
+                ikMemberAlert.classList.add('d-none');
+                if (d.biaya === 0) {
+                     playTTS("Durasi parkir " + d.durasi + " jam. Biaya parkir gratis.");
+                } else {
+                     playTTS("Durasi parkir " + d.durasi + " jam. Biaya parkir " + d.biaya + " rupiah.");
+                }
+            }
+            
+            var ikModal = new bootstrap.Modal(document.getElementById('infoKeluarModal'));
+            ikModal.show();
+        } else {
+            playTTS("QR code tidak valid atau kendaraan sudah keluar.");
+            alert(data.message || "Gagal memproses QR.");
+            sudahScan = false;
+            if(typeof html5QrCode !== 'undefined' && html5QrCode.isScanning) html5QrCode.resume();
+        }
+    }).catch(err => {
+        console.error(err);
+        alert("Terjadi kesalahan jaringan.");
+        sudahScan = false;
+        if(typeof html5QrCode !== 'undefined' && html5QrCode.isScanning) html5QrCode.resume();
+    });
 }
 
 document.getElementById('manualQr').addEventListener('keydown', e => {

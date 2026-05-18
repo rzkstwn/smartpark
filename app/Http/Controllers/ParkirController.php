@@ -275,12 +275,66 @@ class ParkirController extends Controller
                     ->first();
 
         if ($member) {
+            $isActive = \Carbon\Carbon::parse($member->masa_aktif_sampai)->isFuture();
             return response()->json([
                 'success' => true,
-                'member' => collect($member)->only(['id', 'nama', 'plat_nomor', 'jenis_kendaraan', 'masa_aktif_sampai'])->toArray()
+                'member' => [
+                    'id' => $member->id,
+                    'nama' => $member->nama,
+                    'plat_nomor' => $member->plat_nomor,
+                    'jenis_kendaraan' => $member->jenis_kendaraan,
+                    'masa_aktif_sampai' => \Carbon\Carbon::parse($member->masa_aktif_sampai)->format('d M Y'),
+                    'is_active' => $isActive
+                ]
             ]);
         }
 
         return response()->json(['success' => false]);
+    }
+
+    public function checkKeluarApi(Request $request)
+    {
+        $qr = $request->input('qr_code');
+        
+        // Coba cari dari data parkir langsung (QR tiket)
+        $parkir = Parkir::with(['kendaraan', 'member'])->where('qr_code', $qr)->where('status', 'masuk')->first();
+        
+        // Jika tidak ketemu, coba cari dari QR member yang punya kendaraan dengan status masuk
+        if (!$parkir) {
+            $member = Member::where('qr_code', $qr)->first();
+            if ($member) {
+                $parkir = Parkir::with(['kendaraan', 'member'])->where('member_id', $member->id)->where('status', 'masuk')->first();
+            }
+        }
+
+        if (!$parkir) {
+            return response()->json(['success' => false, 'message' => 'Kendaraan tidak ditemukan atau sudah keluar.']);
+        }
+
+        $waktuKeluar = now();
+        $durasi = max(1, ceil(\Carbon\Carbon::parse($parkir->waktu_masuk)->diffInMinutes($waktuKeluar) / 60));
+        $jenis = optional($parkir->kendaraan)->jenis_kendaraan;
+        
+        $biaya = $this->hitungBiaya($jenis, $durasi, $parkir->member);
+        
+        $isMember = $parkir->member ? true : false;
+        $isMemberActive = false;
+        if($isMember) {
+             $isMemberActive = \Carbon\Carbon::parse($parkir->member->masa_aktif_sampai)->isFuture();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'parkir_id' => $parkir->id,
+                'plat_nomor' => optional($parkir->kendaraan)->plat_nomor,
+                'waktu_masuk' => \Carbon\Carbon::parse($parkir->waktu_masuk)->format('d M Y H:i'),
+                'waktu_keluar' => $waktuKeluar->format('d M Y H:i'),
+                'durasi' => $durasi,
+                'biaya' => $biaya,
+                'is_member' => $isMember,
+                'is_member_active' => $isMemberActive
+            ]
+        ]);
     }
 }

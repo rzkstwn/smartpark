@@ -320,7 +320,58 @@
     </div>
 </div>
 
-<!-- Tesseract.js & Html5Qrcode -->
+<!-- Verifikasi Member Modal -->
+<div class="modal fade" id="verifikasiMemberModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; background: #0f172a; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <div id="vmHeader" style="background: linear-gradient(135deg, #10b981, #059669); padding: 15px; text-align: center; color: white;">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-check-circle me-2"></i>MEMBER TERDETEKSI</h5>
+            </div>
+            <div class="modal-body p-4 text-white">
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <span class="text-secondary" style="font-size: 13px;">Nama</span>
+                        <span class="fw-bold" id="vmNama">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <span class="text-secondary" style="font-size: 13px;">Plat Nomor</span>
+                        <span class="fw-bold" id="vmPlat">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <span class="text-secondary" style="font-size: 13px;">Jenis Kendaraan</span>
+                        <span class="fw-bold" id="vmJenis">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <span class="text-secondary" style="font-size: 13px;">Status</span>
+                        <span class="badge" id="vmStatus" style="font-size: 12px;">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-secondary" style="font-size: 13px;">Masa Aktif</span>
+                        <span class="fw-bold" id="vmExpired">-</span>
+                    </div>
+                </div>
+
+                <div id="vmExpiredAlert" class="mt-4 p-3 rounded text-center d-none" style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5;">
+                    <i class="fas fa-exclamation-triangle me-2 mb-2" style="font-size: 24px;"></i><br>
+                    <strong>Masa aktif member Anda telah habis.</strong><br>
+                    <small>Silakan perpanjang atau gunakan parkir reguler.</small>
+                </div>
+                
+                <div id="vmActiveAlert" class="mt-4 p-3 rounded text-center" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7;">
+                    <i class="fas fa-shield-check me-2 mb-2" style="font-size: 24px;"></i><br>
+                    <strong>Akses Parkir Diizinkan</strong><br>
+                    <small>Portal terbuka otomatis...</small>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 d-flex justify-content-center p-3 pb-4" id="vmFooter">
+                <!-- Buttons injected dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tesseract.js & Html5Qrcode & Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
@@ -470,11 +521,20 @@
         }, 300); // Wait 300ms after last stroke
     });
 
+    function playTTS(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.rate = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
     function processMemberCheck(code) {
         document.getElementById('qrCodeInput').value = code;
         closeQrModal();
 
-        // Check via API
         fetch('/api/member/check', {
             method: 'POST',
             headers: {
@@ -486,19 +546,70 @@
         .then(res => res.json())
         .then(data => {
             if(data.success) {
-                // Show success UI
-                document.getElementById('memberName').textContent = data.member.nama;
-                document.getElementById('memberAlert').classList.remove('d-none');
+                const member = data.member;
                 
                 // Auto fill form
-                document.getElementById('platInput').value = data.member.plat_nomor;
-                document.getElementById(data.member.jenis_kendaraan).checked = true;
+                document.getElementById('platInput').value = member.plat_nomor;
+                document.getElementById(member.jenis_kendaraan).checked = true;
 
-                // Auto submit form to generate ticket
-                setTimeout(() => {
-                    document.getElementById('formMasuk').submit();
-                }, 1500);
+                // Setup Verifikasi Modal
+                document.getElementById('vmNama').textContent = member.nama;
+                document.getElementById('vmPlat').textContent = member.plat_nomor;
+                document.getElementById('vmJenis').innerHTML = member.jenis_kendaraan === 'motor' ? '<i class="fas fa-motorcycle me-1"></i> Motor' : '<i class="fas fa-car me-1"></i> Mobil';
+                document.getElementById('vmExpired').textContent = member.masa_aktif_sampai;
+                
+                const vmHeader = document.getElementById('vmHeader');
+                const vmStatus = document.getElementById('vmStatus');
+                const vmActiveAlert = document.getElementById('vmActiveAlert');
+                const vmExpiredAlert = document.getElementById('vmExpiredAlert');
+                const vmFooter = document.getElementById('vmFooter');
+
+                var vmModal = new bootstrap.Modal(document.getElementById('verifikasiMemberModal'));
+
+                if (member.is_active) {
+                    // Active Member
+                    vmHeader.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    vmHeader.innerHTML = '<h5 class="mb-0 fw-bold"><i class="fas fa-check-circle me-2"></i>MEMBER TERDETEKSI</h5>';
+                    
+                    vmStatus.className = 'badge bg-success';
+                    vmStatus.textContent = 'AKTIF';
+                    
+                    vmActiveAlert.classList.remove('d-none');
+                    vmExpiredAlert.classList.add('d-none');
+                    
+                    vmFooter.innerHTML = ''; // Auto submit doesn't need buttons usually, but we can add one just in case
+                    
+                    playTTS("Member valid, silakan masuk");
+                    
+                    vmModal.show();
+                    
+                    // Auto submit form to generate ticket after showing card
+                    setTimeout(() => {
+                        document.getElementById('formMasuk').submit();
+                    }, 2500);
+                    
+                } else {
+                    // Expired Member
+                    vmHeader.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                    vmHeader.innerHTML = '<h5 class="mb-0 fw-bold"><i class="fas fa-times-circle me-2"></i>MEMBER EXPIRED</h5>';
+                    
+                    vmStatus.className = 'badge bg-danger';
+                    vmStatus.textContent = 'EXPIRED';
+                    
+                    vmActiveAlert.classList.add('d-none');
+                    vmExpiredAlert.classList.remove('d-none');
+                    
+                    vmFooter.innerHTML = `
+                        <button type="button" class="btn btn-outline-light w-100 mb-2" onclick="document.getElementById('formMasuk').submit();">Masuk Reguler (Bayar)</button>
+                        <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal">Tutup & Perpanjang</button>
+                    `;
+                    
+                    playTTS("Masa aktif member habis. Silakan perpanjang atau gunakan parkir reguler.");
+                    
+                    vmModal.show();
+                }
             } else {
+                playTTS("QR code tidak valid atau data tidak ditemukan.");
                 alert("Data member tidak ditemukan untuk kartu ini.");
             }
         }).catch(err => {

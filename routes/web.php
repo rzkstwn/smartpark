@@ -123,6 +123,7 @@ Route::get('/api/dashboard', function () {
 
 // API Check Member
 Route::post('/api/member/check', [\App\Http\Controllers\ParkirController::class, 'checkMember'])->name('api.member.check');
+Route::post('/api/parkir/check-keluar', [\App\Http\Controllers\ParkirController::class, 'checkKeluarApi'])->name('api.parkir.check-keluar');
 
 
 
