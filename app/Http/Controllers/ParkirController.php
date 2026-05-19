@@ -9,6 +9,8 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Kendaraan;
 use App\Models\Member;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 
 class ParkirController extends Controller
@@ -154,7 +156,34 @@ class ParkirController extends Controller
         }
 
         $biaya = $this->hitungBiaya($jenis, $durasi, $parkir->member);
-        return view('parkir.bayar', compact('parkir', 'durasi', 'biaya'));
+        $snapToken = null;
+
+        if ($biaya > 0) {
+            // Konfigurasi Midtrans
+            Config::$serverKey = env('MIDTRANS_SERVER_KEY', 'SB-Mid-server-YOUR_SERVER_KEY');
+            Config::$isProduction = false;
+            Config::$isSanitized = true;
+            Config::$is3ds = true;
+
+            $params = [
+                'transaction_details' => [
+                    'order_id' => 'PARKIR-' . $parkir->id . '-' . time(),
+                    'gross_amount' => $biaya,
+                ],
+                'customer_details' => [
+                    'first_name' => 'Pengguna',
+                    'last_name' => 'SmartPark',
+                ],
+            ];
+
+            try {
+                $snapToken = Snap::getSnapToken($params);
+            } catch (\Exception $e) {
+                // Return to error page or handle exception
+            }
+        }
+
+        return view('parkir.bayar', compact('parkir', 'durasi', 'biaya', 'snapToken'));
     }
 
     /**
@@ -191,7 +220,34 @@ class ParkirController extends Controller
         }
 
         $biaya = $this->hitungBiaya($jenis, $durasi, $parkir->member);
-        return view('parkir.bayar', compact('parkir', 'durasi', 'biaya'));
+        $snapToken = null;
+
+        if ($biaya > 0) {
+            // Konfigurasi Midtrans
+            Config::$serverKey = env('MIDTRANS_SERVER_KEY', 'SB-Mid-server-YOUR_SERVER_KEY');
+            Config::$isProduction = false;
+            Config::$isSanitized = true;
+            Config::$is3ds = true;
+
+            $params = [
+                'transaction_details' => [
+                    'order_id' => 'PARKIR-' . $parkir->id . '-' . time(),
+                    'gross_amount' => $biaya,
+                ],
+                'customer_details' => [
+                    'first_name' => 'Pengguna',
+                    'last_name' => 'SmartPark',
+                ],
+            ];
+
+            try {
+                $snapToken = Snap::getSnapToken($params);
+            } catch (\Exception $e) {
+                // Handle exception
+            }
+        }
+
+        return view('parkir.bayar', compact('parkir', 'durasi', 'biaya', 'snapToken'));
     }
 
     public function bayar($id)

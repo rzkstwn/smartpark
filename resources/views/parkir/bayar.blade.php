@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Pembayaran</title>
+    <!-- Midtrans Snap JS -->
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY', 'SB-Mid-client-YOUR_CLIENT_KEY') }}"></script>
 
     <style>
         body {
@@ -41,6 +43,12 @@
         button:hover {
             transform: scale(1.03);
         }
+        
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         .info {
             font-size: 14px;
@@ -67,18 +75,51 @@
     @endif
 
     <!-- 🔥 FORM KE CONTROLLER -->
-    <form action="{{ route('bayar', $parkir->id) }}" method="POST">
-    @csrf
-    <button>
-        @if($parkir->member && \Carbon\Carbon::parse($parkir->member->masa_aktif_sampai)->isFuture())
-            🚀 Lanjutkan (Buka Portal)
-        @else
-            💰 Bayar Sekarang
-        @endif
-    </button>
-</form>
+    <form id="payment-form" action="{{ route('bayar', $parkir->id) }}" method="POST">
+        @csrf
+        <button type="button" id="pay-button">
+            @if($parkir->member && \Carbon\Carbon::parse($parkir->member->masa_aktif_sampai)->isFuture())
+                🚀 Lanjutkan (Buka Portal)
+            @else
+                💰 Bayar Sekarang
+            @endif
+        </button>
+    </form>
 
 </div>
+
+<script type="text/javascript">
+    document.getElementById('pay-button').onclick = function () {
+        @if(isset($snapToken) && $snapToken)
+            // Trigger snap popup. @TODO: Replace TRANSACTION_TOKEN_HERE with your transaction token
+            window.snap.pay('{{ $snapToken }}', {
+                onSuccess: function(result){
+                    /* You may add your own implementation here */
+                    document.getElementById('pay-button').innerHTML = 'Memproses...';
+                    document.getElementById('pay-button').disabled = true;
+                    document.getElementById('payment-form').submit();
+                },
+                onPending: function(result){
+                    /* You may add your own implementation here */
+                    alert("Menunggu pembayaran Anda!"); console.log(result);
+                },
+                onError: function(result){
+                    /* You may add your own implementation here */
+                    alert("Pembayaran gagal!"); console.log(result);
+                },
+                onClose: function(){
+                    /* You may add your own implementation here */
+                    alert('Anda menutup popup sebelum menyelesaikan pembayaran');
+                }
+            });
+        @else
+            // Jika gratis (misal member), langsung submit
+            document.getElementById('pay-button').innerHTML = 'Memproses...';
+            document.getElementById('pay-button').disabled = true;
+            document.getElementById('payment-form').submit();
+        @endif
+    };
+</script>
 
 </body>
 </html>
