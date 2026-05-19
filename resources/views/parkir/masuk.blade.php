@@ -404,11 +404,52 @@
             .then(stream => {
                 videoStream = stream;
                 videoFeed.srcObject = stream;
+                videoFeed.onloadedmetadata = () => {
+                    videoFeed.play();
+                    drawOverlay();
+                };
             })
             .catch(err => {
                 alert("Tidak dapat mengakses kamera: " + err);
                 closeCameraModal();
             });
+    }
+
+    function drawOverlay() {
+        const overlay = document.getElementById('canvasOverlay');
+        const video = document.getElementById('videoFeed');
+        
+        if (!video.clientWidth) {
+            requestAnimationFrame(drawOverlay);
+            return;
+        }
+        
+        overlay.width = video.clientWidth;
+        overlay.height = video.clientHeight;
+        const ctx = overlay.getContext('2d');
+        
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(0, 0, overlay.width, overlay.height);
+        
+        const rw = overlay.width * 0.8;
+        const rh = overlay.height * 0.3;
+        const rx = (overlay.width - rw) / 2;
+        const ry = (overlay.height - rh) / 2;
+        
+        ctx.clearRect(rx, ry, rw, rh);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(rx, ry, rw, rh);
+        
+        // Corner markers
+        const len = 20;
+        ctx.beginPath();
+        ctx.moveTo(rx, ry + len); ctx.lineTo(rx, ry); ctx.lineTo(rx + len, ry);
+        ctx.moveTo(rx + rw - len, ry); ctx.lineTo(rx + rw, ry); ctx.lineTo(rx + rw, ry + len);
+        ctx.moveTo(rx + rw, ry + rh - len); ctx.lineTo(rx + rw, ry + rh); ctx.lineTo(rx + rw - len, ry + rh);
+        ctx.moveTo(rx + len, ry + rh); ctx.lineTo(rx, ry + rh); ctx.lineTo(rx, ry + rh - len);
+        ctx.stroke();
     }
 
     function closeCameraModal() {
@@ -424,20 +465,55 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membaca...';
         btn.disabled = true;
 
+        const video = document.getElementById('videoFeed');
         const canvas = document.createElement('canvas');
-        canvas.width = videoFeed.videoWidth;
-        canvas.height = videoFeed.videoHeight;
-        canvas.getContext('2d').drawImage(videoFeed, 0, 0, canvas.width, canvas.height);
+        
+        // Hitung skala dari ukuran video ke resolusi asli
+        const scaleX = video.videoWidth / video.clientWidth;
+        const scaleY = video.videoHeight / video.clientHeight;
+        
+        // Ambil region of interest (ROI) kotak hijau
+        const rw = video.clientWidth * 0.8 * scaleX;
+        const rh = video.clientHeight * 0.3 * scaleY;
+        const rx = (video.clientWidth * 0.1) * scaleX;
+        const ry = (video.clientHeight * 0.35) * scaleY;
+
+        canvas.width = rw;
+        canvas.height = rh;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, rx, ry, rw, rh, 0, 0, rw, rh);
+
+        // Image processing: Grayscale & Contrast
+        let imgData = ctx.getImageData(0, 0, rw, rh);
+        let pixels = imgData.data;
+        for (let i = 0; i < pixels.length; i += 4) {
+            let val = pixels[i] * 0.299 + pixels[i+1] * 0.587 + pixels[i+2] * 0.114;
+            val = ((val / 255 - 0.5) * 1.5 + 0.5) * 255; // increase contrast
+            if (val > 255) val = 255;
+            if (val < 0) val = 0;
+            pixels[i] = val;
+            pixels[i+1] = val;
+            pixels[i+2] = val;
+        }
+        ctx.putImageData(imgData, 0, 0);
 
         try {
             const result = await Tesseract.recognize(canvas, 'eng');
-            let text = result.data.text.replace(/[^A-Z0-9\s]/gi, '').trim().toUpperCase();
+            // Hanya ambil huruf dan angka
+            let text = result.data.text.replace(/[^A-Z0-9]/gi, '').trim().toUpperCase();
             
-            if(text.length > 2) {
-                document.getElementById('platInput').value = text;
-                alert("Plat nomor berhasil dibaca: " + text);
+            // Format ke plat nomor Indonesia (contoh: B 1234 ABC)
+            let formattedText = text;
+            const match = text.match(/^([A-Z]{1,2})([0-9]{1,4})([A-Z]{0,3})$/);
+            if (match) {
+                formattedText = `${match[1]} ${match[2]} ${match[3]}`.trim();
+            }
+            
+            if(formattedText.length > 2) {
+                document.getElementById('platInput').value = formattedText;
+                alert("Plat nomor berhasil dibaca: " + formattedText);
             } else {
-                alert("Plat nomor tidak terbaca jelas. Coba lagi.");
+                alert("Plat nomor tidak terbaca jelas. Pastikan plat berada di dalam kotak hijau dan cukup terang.");
             }
         } catch (err) {
             alert("Error saat membaca gambar.");
