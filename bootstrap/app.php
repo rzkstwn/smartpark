@@ -13,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withMiddleware(function (Middleware $middleware): void {
 
-        // 🔥 TAMBAHKAN DI SINI
+        // 🔥 TRUST PROXY RAILWAY
+        $middleware->trustProxies(at: '*');
+
+        // 🔥 ROLE MIDDLEWARE
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
