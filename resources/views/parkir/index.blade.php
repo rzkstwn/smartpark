@@ -268,7 +268,7 @@
             </div>
 
             {{-- Table --}}
-            <div class="p-0">
+            <div class="p-0 table-responsive">
                 <table id="tabelKendaraan" class="table table-hover mb-0 w-100">
                     <thead>
                         <tr>

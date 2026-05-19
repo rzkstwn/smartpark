@@ -1,130 +1,229 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <i class="fas fa-user-shield text-blue-600 dark:text-blue-400 text-lg"></i>
+    <style>
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .dark .form-card { background: #1e293b; border-color: #334155; }
+        
+        .form-card-header {
+            background: linear-gradient(to right, #ffffff, #f8fafc);
+            border-bottom: 1px solid #f1f5f9;
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .dark .form-card-header { background: linear-gradient(to right, #1e293b, #0f172a); border-bottom-color: #334155; }
+
+        .header-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px;
+            box-shadow: 0 8px 16px rgba(37,99,235,0.25);
+        }
+
+        .header-text h3 {
+            font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;
+            letter-spacing: -0.3px;
+        }
+        .dark .header-text h3 { color: #f8fafc; }
+        .header-text p {
+            font-size: 12px; color: #64748b; margin: 2px 0 0 0;
+        }
+
+        .avatar-upload-box {
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            border: 4px solid #f8fafc;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            background: #f1f5f9;
+            position: relative;
+            overflow: hidden;
+            margin: 0 auto;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .dark .avatar-upload-box { border-color: #1e293b; background: #0f172a; }
+
+        .avatar-upload-box img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .avatar-upload-box .overlay {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: white; font-size: 13px; font-weight: 500;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .avatar-upload-box:hover .overlay { opacity: 1; }
+        
+        .input-group-custom { position: relative; margin-bottom: 20px; }
+        .input-group-custom .icon-wrapper {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: #94a3b8; font-size: 15px; pointer-events: none;
+        }
+        .input-group-custom .form-control, .input-group-custom .form-select {
+            padding: 12px 16px 12px 42px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 14px; color: #334155;
+            transition: all 0.2s;
+        }
+        .dark .input-group-custom .form-control, .dark .input-group-custom .form-select {
+            background: #0f172a; border-color: #334155; color: #f8fafc;
+        }
+        .input-group-custom .form-control:focus, .input-group-custom .form-select:focus {
+            background: #ffffff; border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+        }
+        .dark .input-group-custom .form-control:focus, .dark .input-group-custom .form-select:focus {
+            background: #1e293b;
+        }
+
+        .btn-submit {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; border-radius: 12px; font-size: 14px; font-weight: 600;
+            border: none; display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s; box-shadow: 0 4px 12px rgba(16,185,129,0.2);
+            text-decoration: none;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16,185,129,0.3);
+            color: white;
+        }
+        
+        .btn-cancel {
+            padding: 12px 24px;
+            background: white; border: 1px solid #e2e8f0;
+            color: #475569; border-radius: 12px; font-size: 14px; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s; text-decoration: none;
+        }
+        .dark .btn-cancel { background: #1e293b; border-color: #334155; color: #cbd5e1; }
+        .btn-cancel:hover { background: #f1f5f9; color: #1e293b; }
+        .dark .btn-cancel:hover { background: #334155; color: #f8fafc; }
+    </style>
+
+    <x-slot name="header">Manajemen Data Petugas</x-slot>
+
+    <div class="container-fluid py-4">
+        
+        @if ($errors->any())
+        <div class="alert alert-danger rounded-3 border-0 shadow-sm mb-4" style="background:#fef2f2; color:#991b1b;">
+            <div class="d-flex align-items-center gap-2 mb-2 fw-bold">
+                <i class="fas fa-exclamation-circle"></i> Terdapat Kesalahan:
             </div>
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ isset($user) ? 'Edit Data Petugas' : 'Tambah Petugas Baru' }}
-            </h2>
+            <ul class="mb-0 ps-3">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
-    </x-slot>
+        @endif
 
-    <div class="py-8">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div class="p-8">
-                    
-                    @if ($errors->any())
-                        <div class="flex p-4 mb-6 text-sm text-red-800 rounded-xl bg-red-50 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/30">
-                            <i class="fas fa-exclamation-circle text-lg mr-3 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold mb-1 block">Terdapat beberapa kesalahan:</span>
-                                <ul class="list-disc pl-4 space-y-1">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
-                    @endif
-
-                    <form action="{{ isset($user) ? route('user.update', $user->id) : route('user.store') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        @if(isset($user))
-                            @method('PUT')
-                        @endif
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <!-- Kolom Kiri: Upload Foto -->
-                            <div class="md:col-span-1 flex flex-col items-center">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4 w-full text-center">Foto Profil</label>
-                                
-                                <div class="relative group cursor-pointer mb-3">
-                                    <div class="w-40 h-40 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-gray-900 flex items-center justify-center relative">
-                                        @if(isset($user) && $user->foto)
-                                            <img id="photo-preview" src="{{ Storage::url($user->foto) }}" alt="Preview" class="w-full h-full object-cover">
-                                        @else
-                                            <img id="photo-preview" src="" alt="Preview" class="w-full h-full object-cover hidden">
-                                            <i id="photo-icon" class="fas fa-camera text-4xl text-gray-400 dark:text-gray-500"></i>
-                                        @endif
-                                        
-                                        <!-- Hover Overlay -->
-                                        <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                            <span class="text-white text-sm font-medium"><i class="fas fa-upload mr-2"></i>Pilih Foto</span>
-                                        </div>
-                                    </div>
-                                    <input type="file" name="foto" id="foto" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewImage(this)">
-                                </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 text-center">Format: JPG, PNG, WEBP<br>Maks: 5MB</p>
-                            </div>
-
-                            <!-- Kolom Kanan: Form Data -->
-                            <div class="md:col-span-2 space-y-5">
-                                <div>
-                                    <label for="name" class="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Nama Lengkap</label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-user text-gray-400"></i>
-                                        </div>
-                                        <input type="text" name="name" id="name" value="{{ old('name', $user->name ?? '') }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-3 dark:bg-gray-700/50 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white transition" placeholder="Masukkan nama lengkap" required>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label for="email" class="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Alamat Email</label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-envelope text-gray-400"></i>
-                                        </div>
-                                        <input type="email" name="email" id="email" value="{{ old('email', $user->email ?? '') }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-3 dark:bg-gray-700/50 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white transition" placeholder="email@contoh.com" required>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label for="password" class="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-lock text-gray-400"></i>
-                                        </div>
-                                        <input type="password" name="password" id="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-3 dark:bg-gray-700/50 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white transition" placeholder="{{ isset($user) ? 'Kosongkan jika tidak ingin diubah' : 'Minimal 6 karakter' }}" {{ isset($user) ? '' : 'required' }}>
-                                    </div>
-                                    @if(isset($user))
-                                        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400"><i class="fas fa-info-circle mr-1"></i>Abaikan field ini jika tidak ingin mengganti password.</p>
-                                    @endif
-                                </div>
-
-                                <div>
-                                    <label for="role" class="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Hak Akses (Role)</label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-id-badge text-gray-400"></i>
-                                        </div>
-                                        <select name="role" id="role" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-3 dark:bg-gray-700/50 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white transition appearance-none" required>
-                                            <option value="petugas" {{ old('role', $user->role ?? '') == 'petugas' ? 'selected' : '' }}>Petugas</option>
-                                            <option value="admin" {{ old('role', $user->role ?? '') == 'admin' ? 'selected' : '' }}>Administrator</option>
-                                        </select>
-                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-8 border-gray-200 dark:border-gray-700">
-
-                        <div class="flex justify-end gap-3">
-                            <a href="{{ route('user.index') }}" class="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 transition">
-                                <i class="fas fa-times mr-2"></i> Batal
-                            </a>
-                            <button type="submit" class="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-0.5">
-                                <i class="fas fa-save mr-2"></i> {{ isset($user) ? 'Simpan Perubahan' : 'Tambah Petugas' }}
-                            </button>
-                        </div>
-                    </form>
+        <div class="form-card">
+            <div class="form-card-header">
+                <div class="header-icon">
+                    <i class="fas fa-user-edit"></i>
+                </div>
+                <div class="header-text">
+                    <h3>{{ isset($user) ? 'Edit Data Petugas' : 'Tambah Petugas Baru' }}</h3>
+                    <p>Lengkapi formulir di bawah ini untuk {{ isset($user) ? 'memperbarui profil' : 'menambahkan' }} petugas.</p>
                 </div>
             </div>
+
+            <form action="{{ isset($user) ? route('user.update', $user->id) : route('user.store') }}" method="POST" enctype="multipart/form-data" class="p-4 p-md-5">
+                @csrf
+                @if(isset($user))
+                    @method('PUT')
+                @endif
+
+                <div class="row g-5">
+                    <!-- Kiri: Foto -->
+                    <div class="col-md-4 text-center">
+                        <label class="fw-semibold text-muted d-block mb-3">Foto Profil</label>
+                        
+                        <div class="avatar-upload-box" onclick="document.getElementById('foto').click()">
+                            @if(isset($user) && $user->foto)
+                                <img id="photo-preview" src="{{ asset('storage/' . $user->foto) }}" alt="Preview">
+                            @else
+                                <img id="photo-preview" src="" alt="Preview" class="d-none">
+                                <i id="photo-icon" class="fas fa-camera text-secondary" style="font-size: 40px;"></i>
+                            @endif
+                            <div class="overlay">
+                                <i class="fas fa-upload mb-1"></i> Pilih Foto
+                            </div>
+                        </div>
+                        <input type="file" name="foto" id="foto" accept="image/*" class="d-none" onchange="previewImage(this)">
+                        
+                        <div class="mt-3 text-muted" style="font-size: 12px;">
+                            Format: JPG, PNG, WEBP<br>Maks: 5MB
+                        </div>
+                    </div>
+
+                    <!-- Kanan: Form Data -->
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary small text-uppercase">Nama Lengkap</label>
+                            <div class="input-group-custom">
+                                <div class="icon-wrapper"><i class="fas fa-user"></i></div>
+                                <input type="text" name="name" class="form-control" value="{{ old('name', $user->name ?? '') }}" placeholder="Masukkan nama lengkap" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary small text-uppercase">Alamat Email</label>
+                            <div class="input-group-custom">
+                                <div class="icon-wrapper"><i class="fas fa-envelope"></i></div>
+                                <input type="email" name="email" class="form-control" value="{{ old('email', $user->email ?? '') }}" placeholder="email@contoh.com" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary small text-uppercase">Password</label>
+                            <div class="input-group-custom">
+                                <div class="icon-wrapper"><i class="fas fa-lock"></i></div>
+                                <input type="password" name="password" class="form-control" placeholder="{{ isset($user) ? 'Kosongkan jika tidak ingin diubah' : 'Minimal 6 karakter' }}" {{ isset($user) ? '' : 'required' }}>
+                            </div>
+                            @if(isset($user))
+                                <div class="form-text mt-1 text-muted"><i class="fas fa-info-circle me-1"></i>Abaikan field ini jika tidak ingin mengganti password.</div>
+                            @endif
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold text-secondary small text-uppercase">Hak Akses (Role)</label>
+                            <div class="input-group-custom">
+                                <div class="icon-wrapper"><i class="fas fa-id-badge"></i></div>
+                                <select name="role" class="form-select" required>
+                                    <option value="petugas" {{ old('role', $user->role ?? '') == 'petugas' ? 'selected' : '' }}>Petugas</option>
+                                    <option value="admin" {{ old('role', $user->role ?? '') == 'admin' ? 'selected' : '' }}>Administrator</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4" style="border-color: #e2e8f0;">
+
+                        <div class="d-flex justify-content-end gap-3">
+                            <a href="{{ route('user.index') }}" class="btn-cancel">
+                                <i class="fas fa-times"></i> Batal
+                            </a>
+                            <button type="submit" class="btn-submit">
+                                <i class="fas fa-save"></i> {{ isset($user) ? 'Simpan Perubahan' : 'Tambah Petugas' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -137,10 +236,10 @@
                     var icon = document.getElementById('photo-icon');
                     
                     preview.src = e.target.result;
-                    preview.classList.remove('hidden');
+                    preview.classList.remove('d-none');
                     
                     if(icon) {
-                        icon.classList.add('hidden');
+                        icon.classList.add('d-none');
                     }
                 }
                 reader.readAsDataURL(input.files[0]);

@@ -251,7 +251,7 @@
                                     <div class="profile-cell">
                                         <div class="avatar-box">
                                             @if($u->foto)
-                                                <img class="avatar-img" src="{{ Storage::url($u->foto) }}" alt="{{ $u->name }}">
+                                                <img class="avatar-img" src="{{ asset('storage/' . $u->foto) }}" alt="{{ $u->name }}">
                                             @else
                                                 <div class="avatar-placeholder {{ $u->role == 'admin' ? 'bg-admin' : 'bg-petugas' }}">
                                                     {{ strtoupper(substr($u->name, 0, 1)) }}
